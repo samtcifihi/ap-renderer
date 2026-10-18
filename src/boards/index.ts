@@ -1,6 +1,6 @@
 import { G as SVGG } from "@svgdotjs/svg.js";
 import { RendererBase } from "../renderers/_base.js";
-import { GridPoints, Poly } from "../grids/index.js";
+import { GridPoints, IPoint, Poly } from "../grids/index.js";
 import { Colourfuncs, Colourstrings, PositiveInteger } from "../schemas/schema.js";
 import { Orientation } from "honeycomb-grid";
 
@@ -65,6 +65,32 @@ export function createGridlineLayers(parent: SVGG, id = "gridlines"): GridlineLa
 
 /** Alias for boards that use a `#cells` group instead of `#gridlines`. */
 export const createCellsLayers = createGridlineLayers;
+
+/**
+ * Map a pointer event to `#board` local coordinates. Unlike `rootSvg.point()`, this
+ * already inverses the board group's rotation from {@link RendererBase.rotateBoard};
+ * do not apply `rotatePoint` again for `getRotation()`.
+ */
+export function boardClickLocalPoint(
+    board: SVGG,
+    clientX: number,
+    clientY: number,
+): IPoint {
+    return board.point(clientX, clientY);
+}
+
+/**
+ * Line-grid boards only draw thin strokes; plain `board.click` misses open areas that
+ * `rootSvg.click` used to receive. `pointer-events: bounding-box` lets the `#board`
+ * group receive clicks anywhere inside its descendants' bounds (no extra geometry).
+ */
+export function attachBoardNearestClick(
+    board: SVGG,
+    handler: (e: { clientX: number; clientY: number }) => void,
+): void {
+    board.attr({ "pointer-events": "bounding-box" });
+    board.click(handler);
+}
 
 /** Add marker sublayers to an existing group (e.g. `#board`) used as the markBoard target. */
 export function ensureBoardMarkerLayers(root: SVGG): GridlineLayers {
