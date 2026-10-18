@@ -194,9 +194,24 @@ export class Stacking3DRenderer extends RendererBase {
             ? this.json.board.backFill as { type?: "full" | "board" }
             : undefined;
         const backFillIsFull = backFillDef?.type === "full";
+        const half = cellsize / 2;
+        // The whole board's outline, in perspective.
+        const boardOutline = [
+            { x: grid[0][0].x - half, y: grid[0][0].y - half },
+            { x: grid[0][width - 1].x + half, y: grid[0][0].y - half },
+            { x: grid[height - 1][width - 1].x + half, y: grid[height - 1][width - 1].y + half },
+            { x: grid[height - 1][0].x - half, y: grid[height - 1][0].y + half },
+        ].map((c) => {
+            const [px, py] = this.project(c.x, c.y);
+            return `${px},${py}`;
+        }).join(" ");
+        if (hasBlocked) {
+            // Blocked cells are left blank, not cut away: an unpainted outline keeps the
+            // whole board's footprint, so that the image does not shrink to the open cells.
+            board.polygon(boardOutline).id("board-extent").fill("none").stroke("none");
+        }
         const [cellFill, cellOpacity] = getBoardFill(this, this.options.colourContext.background);
         if (!backFillIsFull && cellFill !== undefined) {
-            const half = cellsize / 2;
             const fillColour = cellFill ?? this.options.colourContext.background;
             if (hasBlocked) {
                 for (let row = 0; row < height; row++) {
@@ -221,17 +236,7 @@ export class Stacking3DRenderer extends RendererBase {
                     }
                 }
             } else {
-                const corners = [
-                    { x: grid[0][0].x - half, y: grid[0][0].y - half },
-                    { x: grid[0][width - 1].x + half, y: grid[0][0].y - half },
-                    { x: grid[height - 1][width - 1].x + half, y: grid[height - 1][width - 1].y + half },
-                    { x: grid[height - 1][0].x - half, y: grid[height - 1][0].y + half },
-                ];
-                const projected = corners.map((c) => {
-                    const [px, py] = this.project(c.x, c.y);
-                    return `${px},${py}`;
-                }).join(" ");
-                layers.fill.polygon(projected)
+                layers.fill.polygon(boardOutline)
                     .fill({color: fillColour, opacity: cellOpacity})
                     .stroke("none");
             }
@@ -269,7 +274,6 @@ export class Stacking3DRenderer extends RendererBase {
             return { x: px, y: py };
         };
         if (hasBlocked) {
-            const half = cellsize / 2;
             for (let y = 0; y < height; y++) {
                 for (let x = 0; x < width; x++) {
                     if (this.isBlocked(y, x)) {

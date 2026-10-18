@@ -121,6 +121,40 @@ describe("Stacking-3D renderer", () => {
         expect(blockedFill).to.equal(size * size - blocked.length);
     });
 
+    it("should keep the whole board's footprint when cells are blocked", () => {
+        const drawFull = makeDraw();
+        const drawOnlyCenter = makeDraw();
+        const renderer = new Stacking3DRenderer();
+        const size = 5;
+        const allButCenter: { row: number; col: number }[] = [];
+        for (let row = 0; row < size; row++) {
+            for (let col = 0; col < size; col++) {
+                if (row !== 2 || col !== 2) {
+                    allButCenter.push({ row, col });
+                }
+            }
+        }
+        const options = { ...baseOptions, colourContext: { ...baseOptions.colourContext, board: "#cccccc" } };
+
+        renderer.render(stacking3DGridFixture(size, size), drawFull, options);
+        renderer.render(stacking3DGridFixture(size, size, allButCenter), drawOnlyCenter, options);
+
+        // An unblocked board needs no outline: its fill covers it.
+        expect(drawFull.findOne("#board-extent")).to.equal(null);
+        const fullFill = (drawFull.findOne("#board #gridlines-fill") as SVGElement).findOne("polygon") as SVGElement;
+        const extent = drawOnlyCenter.findOne("#board #board-extent") as SVGElement;
+        expect(extent).to.not.equal(null);
+        expect(extent.attr("points")).to.equal(fullFill.attr("points"));
+        // The outline is unpainted, so it shows nothing and takes no clicks.
+        expect(extent.attr("fill")).to.equal("none");
+        expect(extent.attr("stroke")).to.equal("none");
+        // So the image is as large as the whole board, not just its open centre.
+        const fullBox = drawFull.bbox();
+        const centerBox = drawOnlyCenter.bbox();
+        expect(centerBox.width).to.be.closeTo(fullBox.width, 0.5);
+        expect(centerBox.height).to.be.closeTo(fullBox.height, 0.5);
+    });
+
     it("should omit grid lines for blocked cells", () => {
         const drawFull = makeDraw();
         const drawOnlyCenter = makeDraw();

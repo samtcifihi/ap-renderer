@@ -23,6 +23,7 @@ Since the `1.0.0-beta` release, the version in `package.json` has stayed at `1.0
 
 ### Fixed
 
+- **`stacking-3D` blocked cells:** a board with `blocked` cells keeps the whole board's footprint, with an unpainted outline, instead of shrinking to the open cells, so blocked edge rows and columns no longer pull the board to the edge of the image or move it as they change.
 - **Chess solid glyphs:** three paint slots — `fill` (body), `border` (silhouette rim stroke), `highlight` (interior accents; formerly mis-bound to `border`). Fixes white halos when legacy `colour2` / `bestContrast` was applied to the outer rim.
 - **Pieces / `localStash` area labels and entry captions:** Tried to fix browser engine discrepancies by using direct dimension probing instead of relying on consistent application of baseline metrics. Slightly less performant, but not noticeable.
 - **Legacy glyph `opacity` without `colour`:** `fill-opacity` is applied to fill-channel slot bindings on authored defaults (regression from slot paint migration).
